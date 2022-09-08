@@ -12,6 +12,9 @@
 #include <opencv2/core/mat.hpp>
 #include <opencv2/imgcodecs/imgcodecs.hpp>
 
+/*
+* Class that handles flip jpeg image requests
+*/
 class FlipJpegRequestHandler : public Poco::Net::HTTPRequestHandler
 {
 public:
@@ -23,19 +26,21 @@ public:
 
 		std::istream& requestStream = request.stream();
 		std::ostream& responseStream = response.send();
-		
-		std::vector<uint8_t> imgData;
+	
+		std::vector<uint8_t> imgData;   // Received image as vector of bytes
+
+		// Read image from request stream and put it to imgData
 		std::for_each(std::istreambuf_iterator<char>(requestStream),
 			          std::istreambuf_iterator<char>(),
 			          [&imgData](const char& byte) { imgData.push_back(byte); }
 		             );
 
 		cv::Mat imgMatrix = cv::imdecode(imgData, cv::IMWRITE_JPEG_QUALITY);
-
 		imgData.clear();
-		cv::flip(imgMatrix, imgMatrix, 1);
+		cv::flip(imgMatrix, imgMatrix, 1);   // Flip horizontally
 		cv::imencode(".jpg", imgMatrix, imgData);
 		
+		// Write flipped image as bytes to response stream
 		for (const uint8_t& byte : imgData)
 		{
 			responseStream << byte;
@@ -43,6 +48,9 @@ public:
 	};
 };
 
+/*
+* This class creates objects that handle requests received by server
+*/
 class HandlerFactory : public Poco::Net::HTTPRequestHandlerFactory
 {
 public:
@@ -66,6 +74,7 @@ protected:
 		std::cout << "Server is running" << std::endl;
 		waitForTerminationRequest();
 		server.stop();
+		std::cout << "Server shut down" << std::endl;
 
 		return EXIT_OK;
 	}
